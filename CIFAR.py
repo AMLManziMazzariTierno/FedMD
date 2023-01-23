@@ -1,8 +1,8 @@
 
 import torch
 import torchvision
-import torch.transforms as transforms
-from torch.utils.data import Subset
+import torchvision.transforms as transforms
+from datasets import CustomSubset as Subset
 
 def load_CIFAR10(train_transform = None, root_dir='./data/cifar10'):
     if train_transform is None:
@@ -39,10 +39,11 @@ def split_dataset(dataset, N_agents, N_samples_per_class, classes_in_use = None)
     if classes_in_use is None:
         classes_in_use = list(set(dataset.targets))
     labels = torch.tensor(dataset.targets)
-    private_idxs = [torch.tensor([])]*N_agents
-    all_idxs = torch.tensor([])
+    private_idxs = [torch.tensor([], dtype=torch.long)]*N_agents
+    all_idxs = torch.tensor([], dtype=torch.long)
     for cls_ in classes_in_use:
         idxs = torch.nonzero(labels == cls_)
+        idxs = idxs.type(torch.float32)
         samples = torch.multinomial(idxs, N_agents * N_samples_per_class)
         all_idxs = torch.cat((all_idxs, idxs))
         
@@ -55,8 +56,32 @@ def split_dataset(dataset, N_agents, N_samples_per_class, classes_in_use = None)
     
     return private_data, all_private_data
 
-def stratified_sampling(dataset, size = 3000):
-    import sklearn.model_selection
-    idxs = sklearn.model_selection.train_test_split([i for i in range(len(dataset))], \
-        train_size = size, stratify = dataset.targets)[0]
-    return Subset(dataset, idxs)
+
+def generate_alignment_data(X, y, N_alignment=3000):
+    split = StratifiedShuffleSplit(n_splits=1, train_size=N_alignment, random_state=42)
+    if N_alignment == "all":
+        alignment_data = {}
+        alignment_data["idx"] = np.arange(y.shape[0])
+        alignment_data["X"] = X
+        alignment_data["y"] = y
+        return alignment_data
+    for train_index, _ in split.split(X, y):
+        X_alignment = X[train_index]
+        y_alignment = y[train_index]
+    alignment_data = {}
+    alignment_data["idx"] = train_index
+    alignment_data["X"] = X_alignment
+    alignment_data["y"] = y_alignment
+
+    return alignment_data
+
+
+
+
+
+
+#def stratified_sampling(dataset, size = 3000):
+ #   import sklearn.model_selection
+ #   idxs = sklearn.model_selection.train_test_split([i for i in range(len(dataset))], \
+ #       train_size = size, stratify = dataset.targets)[0]
+ #   return Subset(dataset, idxs)
