@@ -6,7 +6,7 @@ import copy
 from training import *
 from data.data_utils import stratified_sampling
 import wandb
-import wandb_utils
+import utils
 from constants import *
 
 class FedMD:
@@ -71,7 +71,7 @@ class FedMD:
             print("Model ", self.model_saved_names[i])
             model_A = copy.deepcopy(agents[i]["model"]) # Create a copy of the agent's model
 
-            if not wandb_utils.load_checkpoint(f"ckpt/{self.model_saved_names[i]}_initial_pri.pt", model_A, restore_path):
+            if not utils.load_checkpoint(f"ckpt/{self.model_saved_names[i]}_initial_pri.pt", model_A, restore_path):
 
                 # If no checkpoint exists, the model is trained from scratch
                 model_A.load_state_dict(agents[i]["model"].state_dict()) # Load the original model's weights
@@ -128,7 +128,7 @@ class FedMD:
             model = agent["model"]
             print(f"UB - Model {self.model_saved_names[i]}")
             model_ub = copy.deepcopy(model)
-            if not wandb_utils.load_checkpoint(f"ckpt/ub/{self.model_saved_names[i]}_ub.pt", model_ub, restore_path):
+            if not utils.load_checkpoint(f"ckpt/ub/{self.model_saved_names[i]}_ub.pt", model_ub, restore_path):
                 model_ub.load_state_dict(model.state_dict())
                 optimizer = load_optimizer(model_ub, agent["train_params"])
                 loss = nn.CrossEntropyLoss()
