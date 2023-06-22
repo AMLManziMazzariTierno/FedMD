@@ -24,10 +24,11 @@ import training
 from PIL import Image
 from tqdm import tqdm
 import wandb
-import utils
+from utils import load_checkpoint, init_wandb, parse_args
+import EarlyStop
 
 def main():
-    args = utils.parse_args()
+    args = parse_args()
 
     wandb_api_key = args.wandb
     os.environ["WANDB_API_KEY"] = wandb_api_key
@@ -90,7 +91,7 @@ def main():
     # Create subset of the test dataset based on remapped private classes
     private_test_dataset = data_utils.generate_class_subset(private_test_dataset, mod_private_classes)
 
-    run, job_id, resumed = utils.init_wandb(run_id=run_id, config=MODELS_BALANCED)
+    run, job_id, resumed = init_wandb(run_id=run_id, config=MODELS_BALANCED)
 
     # Creation of agent models
     agents = []
@@ -113,7 +114,7 @@ def main():
         loaded = load_checkpoint(f"{checkpoint_path}/{saved_model_names[i]}_initial_pub.pt", agent["model"],
                                  restore_path)
         if not loaded:
-            optimizer = trainer_utils.load_optimizer(agent["model"], agent["train_params"])  # optim.Adam(agent.parameters(), lr = LR)
+            optimizer = training.load_optimizer(agent["model"], agent["train_params"])  # optim.Adam(agent.parameters(), lr = LR)
             loss = nn.CrossEntropyLoss()
             print(f"===== TRAINING {saved_model_names[i]} =====")
             accuracies = training.train(network=agent["model"],
@@ -124,7 +125,7 @@ def main():
                                                     batch_size=128,
                                                     num_epochs=20,
                                                     returnAcc=True,
-                                                    early_stop=trainer_utils.EarlyStop(
+                                                    early_stop=EarlyStop(
                                                         pre_training_parameters["patience"],
                                                         pre_training_parameters["min_delta"])
                                                     )

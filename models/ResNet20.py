@@ -103,5 +103,5 @@ class ResNet20(nn.Module):
     def summary(self):
         return "summary"
 
-def resnet20(n_classes):
+def resnet20(n_classes, **kwargs):
     return ResNet20(n_classes)
