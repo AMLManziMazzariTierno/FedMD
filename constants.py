@@ -22,22 +22,23 @@ SEED = 21032000
 # ====================================
 
 MODELS_BALANCED = {
-  "models": [{"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 256, "dropout_rate": 0.2}},
-               {"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 384, "dropout_rate": 0.2}},
-               {"model_type": "2_layer_CNN", "params": {"n1": 128, 'n2': 512, "dropout_rate": 0.2}},
-               {"model_type": "2_layer_CNN", "params": {"n1": 256, "n2": 256, "dropout_rate": 0.3}},
-               {"model_type": "2_layer_CNN", "params": {"n1": 256, "n2": 512, "dropout_rate": 0.4}},
-               {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 256, "dropout_rate": 0.2}},
-               {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 192, "dropout_rate": 0.2}},
-               {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 192, "n3": 256, "dropout_rate": 0.2}},
-               {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 128, "n3": 128, "dropout_rate": 0.3}},
+  "models": [{"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 384, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 128, 'n2': 512, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 256, "n2": 256, "dropout_rate": 0.3}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 256, "n2": 512, "dropout_rate": 0.4}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 192, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 192, "n3": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 128, "n3": 128, "dropout_rate": 0.3}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
                {"model_type": "ResNet20", "train_params": {"optimizer": "Adam", "lr": 1e-3}}
             ],
   "pre_train_params": {"min_delta": 0.005, "patience": 3,
                     "batch_size": 128, "epochs": 30, "is_shuffle": True, 
                     "verbose": 1},
   "model_saved_names" : ["CNN_128__256", "CNN_128_384", "CNN_128_512",
-                          "CNN_64_128_256", "CNN_64_128_192", "CNN_128_192_256",
+                          "CNN_256_256", "CNN_256_512", "CNN_64_128_256",
+                          "CNN_64_128_192", "CNN_128_192_256", "CNN_128_128_128",
                           "ResNet20"],
   "N_agents": 10,
   "N_samples_per_class": 3,
@@ -54,16 +55,20 @@ MODELS_BALANCED = {
 
 MODELS_UNBALANCED = {
   "models": [{"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
-              {"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 384, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
-              {"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 512, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
-              {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
-              {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 192, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
-              {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 192, "n3": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
-              {"model_type": "ResNet20", "train_params": {"optimizer": "SGD", "lr": 1e-1, "weight_decay": 1e-4, "momentum": 0.9}}
+               {"model_type": "2_layer_CNN", "params": {"n1": 128, "n2": 384, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 128, 'n2': 512, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 256, "n2": 256, "dropout_rate": 0.3}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "2_layer_CNN", "params": {"n1": 256, "n2": 512, "dropout_rate": 0.4}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 64, "n2": 128, "n3": 192, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 192, "n3": 256, "dropout_rate": 0.2}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 128, "n3": 128, "dropout_rate": 0.3}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
+               {"model_type": "ResNet20", "train_params": {"optimizer": "Adam", "lr": 1e-3}}
             ],
-    "model_saved_names" : ["CNN_128__256", "CNN_128_384", "CNN_128_512", # The double underscore in the first name is on purpose, don't delete it!
-                            "CNN_64_128_256", "CNN_64_128_192", "CNN_128_192_256",
-                            "ResNet20"],
+    "model_saved_names" : ["CNN_128__256", "CNN_128_384", "CNN_128_512",
+                          "CNN_256_256", "CNN_256_512", "CNN_64_128_256",
+                          "CNN_64_128_192", "CNN_128_192_256", "CNN_128_128_128",
+                          "ResNet20"],
     "N_agents": 10,
     "N_samples_per_class": 20, # not 3
     "N_subset": 5000, 
