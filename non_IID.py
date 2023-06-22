@@ -45,7 +45,7 @@ def main():
     model_saved_names = MODELS_UNBALANCED["model_saved_names"]
     public_classes = MODELS_UNBALANCED["public_classes"]
     private_classes = MODELS_UNBALANCED["private_classes"]
-    num_classes = len(public_classes) + len(private_classes)
+    n_classes = len(public_classes) + len(private_classes)
 
     num_agents = MODELS_UNBALANCED["N_agents"]
     num_samples_per_class = MODELS_UNBALANCED["N_samples_per_class"]
@@ -112,7 +112,7 @@ def main():
         model_name = item["model_type"]
         model_params = item["params"]
         train_params = item["train_params"]
-        tmp = NETWORKS[model_name](n_classes=num_classes, input_shape=(3,32,32), **model_params)
+        tmp = NETWORKS[model_name](n_classes=n_classes, input_shape=(3,32,32), **model_params)
         print("model {0} : {1}".format(i, model_saved_names[i]))
         agents.append({"model": tmp, "train_params": train_params})
         

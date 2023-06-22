@@ -46,7 +46,7 @@ def main():
     saved_model_names = MODELS_BALANCED["model_saved_names"]
     public_classes = MODELS_BALANCED["public_classes"]
     private_classes = MODELS_BALANCED["private_classes"]
-    num_classes = len(public_classes) + len(private_classes)
+    n_classes = len(public_classes) + len(private_classes)
 
     num_agents = MODELS_BALANCED["N_agents"]
     samples_per_class = MODELS_BALANCED["N_samples_per_class"]
@@ -98,7 +98,7 @@ def main():
         model_name = item["model_type"]
         model_params = item["params"]
         train_params = item["train_params"]
-        tmp = NETWORKS[model_name](num_classes=num_classes,
+        tmp = NETWORKS[model_name](n_classes=n_classes,
                                            input_shape=(3, 32, 32),
                                            **model_params)
         print("model {0} : {1}".format(i, saved_model_names[i]))

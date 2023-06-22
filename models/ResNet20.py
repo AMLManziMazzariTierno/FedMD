@@ -50,7 +50,7 @@ class ResNet20(nn.Module):
       super(ResNet20, self).__init__()
       block = BasicBlock
       num_blocks = [3,3,3]
-      self.num_classes = n_classes
+      self.n_classes = n_classes
       self.in_planes = 16
       self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
       self.gn1 = nn.GroupNorm(NUM_GROUP, 16)
@@ -103,5 +103,5 @@ class ResNet20(nn.Module):
     def summary(self):
         return "summary"
 
-def resnet20(n_classes=100):
+def resnet20(n_classes):
     return ResNet20(n_classes)
