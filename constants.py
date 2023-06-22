@@ -48,7 +48,8 @@ MODELS_BALANCED = {
   "N_logits_matching_round": 1, 
   "N_private_training_round": 4,
   "private_training_batchsize" : 5, 
-  "logits_matching_batchsize": 256
+  "logits_matching_batchsize": 256,
+  "result_save_dir": "./result_CIFAR_balanced/"
 }
 
 MODELS_UNBALANCED = {
@@ -72,7 +73,8 @@ MODELS_UNBALANCED = {
     "N_logits_matching_round": 1, 
     "N_private_training_round": 10, # not 4
     "private_training_batchsize" : 10, # not 5
-    "logits_matching_batchsize": 128 # not 256
+    "logits_matching_batchsize": 128, # not 256
+    "result_save_dir": "./result_CIFAR_imbalanced/"
 }
 
 NETWORKS = {"2_layer_CNN": cnn_2layers, "3_layer_CNN": cnn_3layers, "ResNet20": resnet20}
