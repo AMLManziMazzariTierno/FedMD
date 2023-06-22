@@ -24,7 +24,7 @@ from FedMD import FedMD
 from PIL import Image
 from tqdm import tqdm
 import wandb
-from utils_wandb import load_checkpoint, init_wandb, parse_args
+from utils import load_checkpoint, init_wandb, parse_args
 
 def main():
     args = parse_args()    

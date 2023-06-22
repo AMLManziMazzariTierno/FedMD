@@ -24,10 +24,10 @@ import training
 from PIL import Image
 from tqdm import tqdm
 import wandb
-import utils_wandb
+import utils
 
 def main():
-    args = utils_wandb.parse_args()
+    args = utils.parse_args()
 
     wandb_api_key = args.wandb
     os.environ["WANDB_API_KEY"] = wandb_api_key
@@ -90,7 +90,7 @@ def main():
     # Create subset of the test dataset based on remapped private classes
     private_test_dataset = data_utils.generate_class_subset(private_test_dataset, mod_private_classes)
 
-    run, job_id, resumed = utils_wandb.init_wandb(run_id=run_id, config=MODELS_BALANCED)
+    run, job_id, resumed = utils.init_wandb(run_id=run_id, config=MODELS_BALANCED)
 
     # Creation of agent models
     agents = []
