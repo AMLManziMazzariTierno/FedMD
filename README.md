@@ -7,3 +7,5 @@ To run the IID experiment:
 
 To run the non-IID experiment:
 <pre><code>python 'non_IID.py' -wandb YOUR_WANDB_API_KEY</pre></code>
+
+FedMD official implementation: [FedMD_clean](https://github.com/diogenes0319/FedMD_clean)
