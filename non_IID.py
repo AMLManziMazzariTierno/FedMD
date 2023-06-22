@@ -154,9 +154,9 @@ def main():
                   N_rounds=num_rounds,
                   N_subset=num_subset,
                   N_logits_matching_round=num_logits_matching_round,
-                  logits_matching_batch_size=logits_matching_batch_size,
+                  logits_matching_batchsize=logits_matching_batch_size,
                   N_private_training_round=num_private_training_round,
-                  private_training_batch_size=private_training_batch_size,
+                  private_training_batchsize=private_training_batch_size,
                   restore_path=restore_path)
     
     collaboration = fedmd.collaborative_training()
