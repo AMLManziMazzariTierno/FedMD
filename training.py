@@ -2,13 +2,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Subset, DataLoader
-from training.trainer_utils import EarlyStop
+from EarlyStop import EarlyStop
 from torch.backends import cudnn
 from constants import *
 
-def train_model(network, dataset, loss_fn, optimizer, test_dataset=None, batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS, scheduler = None, log_frequency=LOG_FREQUENCY, returnAcc = False, early_stop=None):
-    # TODO: Implement Accuracy calculation for both validation and training. Also implement early stopping.
-    # returned accuracy should be a list where accuracy = [training_accuracy, validation_accuracy]
+def train(network, dataset, loss_fn, optimizer, test_dataset=None, batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS, scheduler = None, log_frequency=LOG_FREQUENCY, returnAcc = False, early_stop=None):
     drop_last = len(dataset) // batch_size > 1
     train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=drop_last)
     # By default, everything is loaded to cpu
@@ -79,7 +77,7 @@ def train_model(network, dataset, loss_fn, optimizer, test_dataset=None, batch_s
         # end of epoch (all batches analyzed)
         if returnAcc:
             train_accuracy = running_corrects / len(dataset)
-            test_accuracy = test_network(net, test_dataset, batch_size=batch_size)
+            test_accuracy = test(net, test_dataset, batch_size=batch_size)
             accuracy.append({"train_accuracy": train_accuracy, "test_accuracy": test_accuracy})
     #end of epochs
     if returnAcc:
@@ -87,7 +85,7 @@ def train_model(network, dataset, loss_fn, optimizer, test_dataset=None, batch_s
     # end train_model
 
 
-def test_network(network, test_dataset, batch_size=BATCH_SIZE):
+def test(network, test_dataset, batch_size=BATCH_SIZE):
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
     net = network.to(DEVICE) # this will bring the network to GPU if DEVICE is cuda
     net.train(False) # Set Network to evaluation mode
@@ -114,7 +112,7 @@ def test_network(network, test_dataset, batch_size=BATCH_SIZE):
     return accuracy
 
 
-def run_dataset(network, dataset, batch_size=BATCH_SIZE):
+def forward_and_collect_logits(network, dataset, batch_size=BATCH_SIZE):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
     net = network.to(DEVICE) # this will bring the network to GPU if DEVICE is cuda
     net.train(False) # Set Network to evaluation mode
@@ -126,11 +124,24 @@ def run_dataset(network, dataset, batch_size=BATCH_SIZE):
 
         # Forward Pass
         outputs = net(images)
-        # Sample 1 -> [2.3, 4.1, 4.3, ..., ]
-        # Sample .. ->[3.1, 1.3, 2.4, ..., ]
 
         # Get predictions
         total_values = torch.cat((total_values.to(DEVICE), outputs.data))
 
     # Calculate Accuracy
     return total_values
+
+def load_optimizer(model, params):
+    assert (model is not None and params is not None and \
+        "optimizer" in params and "lr" in params)
+    
+    optimizer = None
+    lr = params["lr"]
+    weight_decay = params["weight_decay"] if "weight_decay" in params else 0
+    if params["optimizer"] == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    elif params["optimizer"] == "SGD":
+        momentum = params["momentum"] if "momentum" in params else 0
+        optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=momentum)
+    
+    return optimizer

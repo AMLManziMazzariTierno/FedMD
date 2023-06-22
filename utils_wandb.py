@@ -1,10 +1,11 @@
 import wandb
 import torch
 import os
-from constants import CONF_MODELS_BALANCED
-## -- WANDB --
+from constants import MODELS_BALANCED
+import sys
+import argparse
 
-def init_wandb(run_id=None, config=CONF_MODELS_BALANCED):
+def init_wandb(run_id=None, config=MODELS_BALANCED):
     group_name = "fedmd"
 
     configuration = config
@@ -41,16 +42,32 @@ def load_checkpoint(path, model, restore_path = None):
         try:
             weights = wandb.restore(path, run_path=restore_path)
             model.load_state_dict(torch.load(weights.name))
-            print(f"===== SUCCESFULLY LOADED {path} FROM CHECKPOINT =====")
+            print(f"Loaded checkpoint {path}")
             loaded = True
         except ValueError:
-            print(f"===== CHECKPOINT FOR {path} DOES NOT EXIST =====")            
+            print(f"Checkpoint {path} does not exist")            
         except RuntimeError:
-            print(f"===== CHECKPOINT FOR {path} IS CORRUPTED =====")
-            print("Deleting...")
+            print(f"Checkpoint {path} is corrupted")
             files = wandb.run.files()
             for file in files:
                 if file.name == path:
                     file.delete()
-            print("Deleted. Sorry for the inconveniences")
+            print("Deleted, please restart the run.")
     return loaded
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='FedMD, a federated learning framework. \
+    Participants are training collaboratively. ')
+    parser.add_argument('-wandb', metavar='wandb',
+                        help='the wandb API key.'
+                        )
+    parser.add_argument('-run_id', metavar='run_id',
+                        help='the wandb run id to resume.'
+                        )
+    parser.add_argument('-restore_path', metavar='restore_path',
+                        help='the wandb project path to restore files.'
+                        )
+    args = None
+    if len(sys.argv) > 1:
+        args = parser.parse_args(sys.argv[1:])
+    return args

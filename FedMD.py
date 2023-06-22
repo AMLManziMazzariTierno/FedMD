@@ -3,7 +3,7 @@ import torch.optim as optim
 import torch.nn as nn
 import numpy as np
 import copy
-from training.model_trainers import *
+from training import *
 from training.trainer_utils import *
 from data.data_utils import stratified_sampling
 import wandb
@@ -47,36 +47,43 @@ class FedMD:
 
         self.N_agents = len(agents)
         self.model_saved_names = model_saved_names
-        self.public_dataset = public_dataset
-        self.private_data = private_data
-        self.private_test_data = private_test_data
-        self.N_subset = N_subset
 
-        self.N_rounds = N_rounds
-        self.N_logits_matching_round = N_logits_matching_round
-        self.logits_matching_batchsize = logits_matching_batchsize
-        self.N_private_training_round = N_private_training_round
-        self.private_training_batchsize = private_training_batchsize
+        self.public_dataset = public_dataset  # Public dataset used for knowledge distillation
+
+        self.private_data = private_data # Array of dataset subsets used for each agent
+        self.private_test_data = private_test_data
+
+        self.N_subset = N_subset # Sample size of the public dataset for alignment data
+
+        self.N_rounds = N_rounds # Number of rounds to run the collaborative training
+
+        self.N_logits_matching_round = N_logits_matching_round # Number of epochs for knowledge distillation training
+        self.logits_matching_batchsize = logits_matching_batchsize # Batch size for knowledge distillation training
+
+        self.N_private_training_round = N_private_training_round # Number of epochs for private Revisit phase
+        self.private_training_batchsize = private_training_batchsize # Batch size for private Revisit phase
 
         self.collaborative_agents = []
         self.init_result = {}
 
-        # Initial training round on private round
-        # For each model a checkpoint will be uploaded if it exists, otherwise it will perform training  
+        # Initial training round on private data
         print("Start model initialization: ")
         for i in range(self.N_agents):
             print("Model ", self.model_saved_names[i])
-            model_A = copy.deepcopy(agents[i]["model"])
+            model_A = copy.deepcopy(agents[i]["model"]) # Create a copy of the agent's model
 
             if not wandb_utils.load_checkpoint(f"ckpt/{self.model_saved_names[i]}_initial_pri.pt", model_A, restore_path):
-                model_A.load_state_dict(agents[i]["model"].state_dict())
-                optimizer = load_optimizer(model_A, agents[i]["train_params"])
+
+                # If no checkpoint exists, the model is trained from scratch
+                model_A.load_state_dict(agents[i]["model"].state_dict()) # Load the original model's weights
+                optimizer = load_optimizer(model_A, agents[i]["train_params"]) # Load the optimizer
                 loss = nn.CrossEntropyLoss()
                 early_stopping = EarlyStop(patience=10, min_delta=0.01)
 
                 print("start full stack training ... ")
 
-                accuracy = train_model(
+                # Train the model on the private dataset
+                accuracy = train(
                     network=model_A,
                     dataset=private_data[i],
                     test_dataset=private_test_data,
@@ -89,18 +96,21 @@ class FedMD:
                     returnAcc=True,
                 )
 
+                # Save the model's weights and log the test accuracy
                 torch.save(model_A.state_dict(), f'ckpt/{model_saved_names[i]}_initial_pri.pt')
                 wandb.save(f'ckpt/{model_saved_names[i]}_initial_pri.pt')
-                last_test_acc = accuracy[-1]
+                last_test_acc = accuracy[-1] # accuracy of the last epoch
                 wandb.run.summary[f"{model_saved_names[i]}_initial_test_acc"] = last_test_acc["test_accuracy"]
                 self.init_result[f"{model_saved_names[i]}_initial_test_acc"] = last_test_acc["test_accuracy"]
                 print(f"Full stack training done. Accuracy: {last_test_acc['test_accuracy']}")
             else:
-                test_acc = test_network(model_A, private_test_data, 32)
+                # If a checkpoint exists, load the model and evaluate the test accuracy
+                test_acc = test(model_A, private_test_data, 32)
                 wandb.run.summary[f"{model_saved_names[i]}_initial_test_acc"] = test_acc
                 self.init_result[f"{model_saved_names[i]}_initial_test_acc"] = test_acc
             # end if load_checkpoint
 
+            # Store the model information in the collaborative_agents list
             self.collaborative_agents.append({
                 "model_logits": model_A,
                 "model_classifier": model_A,
@@ -108,15 +118,13 @@ class FedMD:
                 "train_params": agents[i]["train_params"]
             })
 
-            del model_A
+            del model_A # Delete the model copy to free up memory
         # end for
 
-        # Perform calculation of the upper bound accuracy, training the initial 
-        #   public trained models on the whole of the data
-        # For each model a checkpoint will be uploaded if it exists, otherwise it will perform training  
+        # Compute the upper bounds by training the initial public models on the total private dataset
         print("Calculate the theoretical upper bounds for participants: ")
-        self.upper_bounds = []
-        self.pooled_train_result = {}
+        self.upper_bound_accuracies = [] # List to store the upper bound accuracies
+        self.pooled_train_result = {} # Dictionary to store the results of the pooled training
         for i, agent in enumerate(agents):
             model = agent["model"]
             print(f"UB - Model {self.model_saved_names[i]}")
@@ -127,7 +135,7 @@ class FedMD:
                 loss = nn.CrossEntropyLoss()
                 early_stopping = EarlyStop(patience=10, min_delta=0.01)
 
-                accuracy = train_model(
+                accuracy = train(
                     network=model_ub,
                     dataset=total_private_data,
                     test_dataset=private_test_data,
@@ -144,51 +152,69 @@ class FedMD:
                 wandb.save(f'ckpt/ub/{model_saved_names[i]}_ub.pt')
                 last_acc = accuracy[-1]["test_accuracy"]
             else:
-                last_acc = test_network(model_ub, private_test_data, 32)
+                last_acc = test(model_ub, private_test_data, 32)
             # end if load ckpt
             wandb.run.summary[f"{model_saved_names[i]}_ub_test_acc"] = last_acc
 
-            self.upper_bounds.append(last_acc)
+            self.upper_bound_accuracies.append(last_acc)
             self.pooled_train_result[f"{model_saved_names[i]}_ub_test_acc"] = last_acc
 
             del model_ub
         # end for
-        print("The upper bounds are:", self.upper_bounds)
+        print("The upper bounds are:", self.upper_bound_accuracies)
     # end __init__
 
     def collaborative_training(self):
         """
-        Collaborative training following the FedMD algorithm loop
-        For each round:
-            Communicate: Each model computes the class scores on the alignment data 
-            Aggregate: The class scores are averaged
-            Distribute: Each agent downloads the averaged consensus
-            Digest: Each agent trains its model for a few epochs to approach the score consensus
-            Revisit: Each agent trains on its private dataset for a few epochs
+        During collaborative training with multiple agents, the following steps are performed in each round:
+        1) Communication: Each agent's model calculates the class scores (logits) for the alignment data,
+                          which is generated by performing stratified sampling on the public dataset.
+                            
+        2) Aggregation: The logits from all agents are averaged to create an aggregated consensus.
+        
+        3) Distribution: Each agent downloads the averaged consensus obtained in the previous step.
+        
+        4) Digest (or Update): Each agent's model updates its weights based on the aggregated logits.
+                   The model's logits are loaded with the updated weights, and an optimizer is initialized.
+                    
+        5) Alignment: The alignment data's targets are set as the averaged logits.
+                      The model is trained to align its logits with the targets using the Mean Absolute Error loss.
+                        
+        6) Revisit: Each agent's model is trained on its private data for a specified number of epochs
+                    using the initialized optimizer and loss function.
+        
+        These steps are repeated for a certain number of rounds to achieve collaborative training among the agents.
         """
-        # Start collaborating training
+        # Start collaborative training
         collaboration_performance = {i: [] for i in range(self.N_agents)}
         r = 0
         while True:
+            
             # At beginning of each round, generate new alignment dataset
             alignment_data = stratified_sampling(self.public_dataset, self.N_subset)
 
             print(f"Round {r}/{self.N_rounds}")
-
-            # Communicate phase
-            print("update logits ... ")
+            
+            """
+            1) Communication: Each agent's model calculates the class scores (logits) for the alignment data,
+                          which is generated by performing stratified sampling on the public dataset.
+            """
+            print("Update logits ... ")
             logits = 0
             for agent in self.collaborative_agents:
                 agent["model_logits"].load_state_dict(agent["model_weights"])
-                model_logits = run_dataset(agent["model_logits"], alignment_data)
+                model_logits = forward_and_collect_logits(agent["model_logits"], alignment_data)
                 logits += model_logits.to('cpu')
-            # Aggregate phase
+                
+            """
+            2) Aggregation: The logits from all agents are averaged to create an aggregated consensus.
+            """
             logits /= self.N_agents
             
-            print("test performance ... ")
+            print("Test performance ... ")
             performances = {}
             for index, agent in enumerate(self.collaborative_agents):
-                accuracy = test_network(network=agent["model_classifier"], test_dataset=self.private_test_data)
+                accuracy = test(network=agent["model_classifier"], test_dataset=self.private_test_data)
 
                 print(f"Model {self.model_saved_names[index]} got accuracy of {accuracy}")
                 performances[f"{self.model_saved_names[index]}_test_acc"] = accuracy
@@ -208,18 +234,26 @@ class FedMD:
             print("Update models ...")
             for index, agent in enumerate(self.collaborative_agents):
                 print(f"Model {self.model_saved_names[index]} starting alignment with public logits... ")
-
-                # Distribute + Digest phase
+                
+                """
+                3) Distribution: Each agent downloads the averaged consensus obtained in the previous step.
+        
+                4) Digest (or Update): Each agent's model updates its weights based on the aggregated logits.
+                   The model's logits are loaded with the updated weights, and an optimizer is initialized.
+                """
                 weights_to_use = None
                 weights_to_use = agent["model_weights"]
 
                 agent["model_logits"].load_state_dict(weights_to_use)
                 optimizer = load_optimizer(agent["model_logits"], agent["train_params"])
-                # To align logits scores, the logits are used as "class labels"
-                # so the Mean Absolute error needs to be used
+
+                """
+                5) Alignment: The alignment data's targets are set as the averaged logits.
+                      The model is trained to align its logits with the targets using the Mean Absolute Error loss.
+                """
                 logits_loss = nn.L1Loss()
                 alignment_data.targets = logits
-                train_model(
+                train(
                     agent["model_logits"],
                     alignment_data,
                     loss_fn=logits_loss,
@@ -234,13 +268,16 @@ class FedMD:
                 print(f"Model {self.model_saved_names[index]} starting training with private data... ")
                 weights_to_use = None
                 weights_to_use = agent["model_weights"]
-
-                # Revisit phase
+                
+                """
+                6) Revisit: Each agent's model is trained on its private data for a specified number of epochs
+                    using the initialized optimizer and loss function.
+                """
                 agent["model_classifier"].load_state_dict(weights_to_use)
 
                 optimizer = load_optimizer(agent["model_classifier"], agent["train_params"])
                 loss = nn.CrossEntropyLoss()
-                train_model(
+                train(
                     agent["model_classifier"],
                     self.private_data[index],
                     loss_fn=loss,
@@ -254,4 +291,7 @@ class FedMD:
                 print(f"Model {self.model_saved_names[index]} done private training. \n")
             # end for
         # end while
+        """
+        The method returns a dictionary collaboration_performance containing the test performance of each agent's model at each round
+        """
         return collaboration_performance

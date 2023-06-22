@@ -47,10 +47,10 @@ def split_dataset(dataset, N_agents, N_samples_per_class, classes_in_use = None,
     labels = torch.tensor(dataset.targets)
 
     # List of empty tensors, one for each agent
-    private_idxs = [torch.tensor([], dtype=torch.long)]*N_agents
+    agent_indices = [torch.tensor([], dtype=torch.long)]*N_agents
 
     # Empty tensor that will contain all the indices
-    all_idxs = torch.tensor([], dtype=torch.long)
+    all_indices = torch.tensor([], dtype=torch.long)
 
     # For each class
     for cls_ in classes_in_use:
@@ -62,17 +62,17 @@ def split_dataset(dataset, N_agents, N_samples_per_class, classes_in_use = None,
         # which represent a random set of selected samples for each class.
         samples = torch.multinomial(torch.ones(idxs.size()), N_agents * N_samples_per_class)
         
-        # Concatenate the sampled indices to all_idxs
-        all_idxs = torch.cat((all_idxs, idxs[samples]))
+        # Concatenate the sampled indices to all_indices
+        all_indices = torch.cat((all_indices, idxs[samples]))
 
         for i in range(N_agents):
             # Get (N_samples_per_class) indices from the sampled indices for each class, using slicing.
             # These will be the indices that we assign to each agent.
-            idx_agent = idxs[samples[i*N_samples_per_class : (i+1)*N_samples_per_class]]
+            agent_index = idxs[samples[i*N_samples_per_class : (i+1)*N_samples_per_class]]
             
             # The selected indices for that agent are concatenated to the corresponding
-            # tensor in private_idxs
-            private_idxs[i] = torch.cat((private_idxs[i], idx_agent))
+            # tensor in agent_indices
+            agent_indices[i] = torch.cat((agent_indices[i], agent_index))
 
     # If seed is not None, the function resets the random state
     # to what it was before the sampling was done.
@@ -81,19 +81,20 @@ def split_dataset(dataset, N_agents, N_samples_per_class, classes_in_use = None,
 
     # We create a list of Subset objects, one for each agent.
     # So a Subset object corresponds to all the samples assigned to one of the agents.
-    private_data = [Subset(dataset, private_idx) for private_idx in private_idxs]
+    private_data = [Subset(dataset, agent_index) for agent_index in agent_indices]
     
     # a final Subset object that contains all the samples assigned to all agents
-    all_private_data = Subset(dataset, all_idxs)
+    all_private_data = Subset(dataset, all_indices)
     
     return private_data, all_private_data
 
 def split_dataset_imbalanced(dataset, super_classes, N_agents, N_samples_per_class, classes_per_agent, seed = None):
     """
-    Generates a random class imbalanced split of the dataset among N_agents,
-    assigning N_samples_per_class samples per class per agent, where each agent is assigned
-    a specific set of classes_per_agent.
-    It is worth noting that this function assumes that the dataset has non-overlapping classes.
+    The function generates a random class-imbalanced split
+    of a dataset by randomly assigning N_samples_per_class samples per class per agent,
+    while ensuring that each agent is assigned a specific set of classes_per_agent.
+
+    We assume that the dataset has non-overlapping classes.
     Otherwise, some samples might be assigned to more than one agent.
 
     Parameters:
@@ -113,13 +114,11 @@ def split_dataset_imbalanced(dataset, super_classes, N_agents, N_samples_per_cla
     # Extract the labels of the dataset
     labels = torch.tensor(dataset.targets)
 
-    # Empty list of indices for each agent,
-    # which will be used to create the subsets later
-    private_idxs = [torch.tensor([], dtype=torch.long)]*N_agents
+    # Empty list of indices for each agent which will be used to create the subsets later
+    agent_indices = [torch.tensor([], dtype=torch.long)]*N_agents
 
-    # Empty tensor to store all the indices of the samples
-    # assigned to each agent
-    all_idxs = torch.tensor([], dtype=torch.long)
+    # Empty tensor to store all the indices of the samples assigned to each agent
+    all_indices = torch.tensor([], dtype=torch.long)
 
     # Loop over each agent
     for i, agent_classes in enumerate(classes_per_agent):
@@ -130,14 +129,14 @@ def split_dataset_imbalanced(dataset, super_classes, N_agents, N_samples_per_cla
 
             # Select (N_samples_per_class) random samples
             samples = torch.multinomial(torch.ones(idxs.size()), N_samples_per_class)
-            idx_agent = idxs[samples]
+            agent_index = idxs[samples]
 
             # Concatenate the indices of the selected samples
-            # to private_idxs for the corresponding i-th agent
-            private_idxs[i] = torch.cat((private_idxs[i], idx_agent))
+            # to agent_indices for the corresponding i-th agent
+            agent_indices[i] = torch.cat((agent_indices[i], agent_index))
 
-        # Concatenate the indices of the assigned samples assigned into all_idxs
-        all_idxs = torch.cat((all_idxs, private_idxs[i]))
+        # Concatenate the indices of the assigned samples assigned into all_indices
+        all_indices = torch.cat((all_indices, agent_indices[i]))
 
     if seed is not None:
         # Set the random generator state back to its original state
@@ -146,17 +145,13 @@ def split_dataset_imbalanced(dataset, super_classes, N_agents, N_samples_per_cla
     dataset.targets = super_classes
 
     # Generate the subsets for each agent
-    private_data = [Subset(dataset, private_idx) for private_idx in private_idxs]
+    private_data = [Subset(dataset, agent_index) for agent_index in agent_indices]
     
     # Subset containing all samples assigned to all agents.
-    all_private_data = Subset(dataset, all_idxs)
+    all_private_data = Subset(dataset, all_indices)
     
     return private_data, all_private_data
 
-# In summary, the function generates a class-imbalanced split
-# of a dataset by randomly assigning samples of each class to a
-# specified number of agents, while ensuring that each agent is
-# assigned a specific set of classes.
 
 
 def stratified_sampling(dataset, size = 3000):
