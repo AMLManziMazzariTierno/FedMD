@@ -34,7 +34,7 @@ MODELS_BALANCED = {
                {"model_type": "ResNet20", "params": {}, "train_params": {"optimizer": "Adam", "lr": 1e-3}}
             ],
   "pre_train_params": {"min_delta": 0.005, "patience": 3,
-                    "batch_size": 128, "epochs": 30, "is_shuffle": True, 
+                    "batch_size": 128, "epochs": 20, "is_shuffle": True, 
                     "verbose": 1},
   "model_saved_names" : ["CNN_128__256", "CNN_128_384", "CNN_128_512",
                           "CNN_256_256", "CNN_256_512", "CNN_64_128_256",
@@ -65,6 +65,9 @@ MODELS_UNBALANCED = {
                {"model_type": "3_layer_CNN", "params": {"n1": 128, "n2": 128, "n3": 128, "dropout_rate": 0.3}, "train_params": {"optimizer": "Adam", "lr": 1e-3}},
                {"model_type": "ResNet20", "params": {}, "train_params": {"optimizer": "Adam", "lr": 1e-3}}
             ],
+    "pre_train_params": {"min_delta": 0.005, "patience": 3,
+                        "batch_size": 128, "epochs": 20, "is_shuffle": True, 
+                        "verbose": 1},
     "model_saved_names" : ["CNN_128__256", "CNN_128_384", "CNN_128_512",
                           "CNN_256_256", "CNN_256_512", "CNN_64_128_256",
                           "CNN_64_128_192", "CNN_128_192_256", "CNN_128_128_128",
