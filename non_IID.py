@@ -145,18 +145,19 @@ def main():
             test_acc = training.test(network=agent["model"], test_dataset=test_cifar10, batch_size=128)
             wandb.run.summary[f"{model_saved_names[i]}_initial_pub_test_acc"] = test_acc
 
-    fedmd = FedMD(agents, model_saved_names,
-        public_dataset=train_cifar10, 
-        private_data=private_data, 
-        total_private_data=total_private_data, 
-        private_test_data=private_test_dataset,
-        num_rounds=num_rounds,
-        num_subset=num_subset,
-        num_logits_matching_round=num_logits_matching_round,
-        logits_matching_batch_size=logits_matching_batch_size,
-        num_private_training_round=num_private_training_round,
-        private_training_batch_size=private_training_batch_size,
-        restore_path=restore_path)
+    fedmd = FedMD(agents=agents,
+                  model_saved_names=model_saved_names,
+                  public_dataset=train_cifar10,
+                  private_data=private_data,
+                  total_private_data=total_private_data,
+                  private_test_data=private_test_dataset,
+                  N_rounds=num_rounds,
+                  N_subset=num_subset,
+                  N_logits_matching_rounds=num_logits_matching_round,
+                  logits_matching_batch_size=logits_matching_batch_size,
+                  N_private_training_rounds=num_private_training_round,
+                  private_training_batch_size=private_training_batch_size,
+                  restore_path=restore_path)
     
     collaboration = fedmd.collaborative_training()
 

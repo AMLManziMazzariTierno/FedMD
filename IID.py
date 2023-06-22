@@ -141,16 +141,17 @@ def main():
 
     # Creation of the FedMD algorithm
     # Performs initial private training + upper bound calculation
-    fedmd = FedMD(agents, saved_model_names,
+    fedmd = FedMD(agents=agents,
+                  model_saved_names=saved_model_names,
                   public_dataset=train_cifar10,
                   private_data=private_data,
                   total_private_data=total_private_data,
                   private_test_data=private_test_dataset,
-                  num_rounds=num_rounds,
-                  num_subset=num_subset,
-                  num_logits_matching_rounds=num_logits_matching_rounds,
+                  N_rounds=num_rounds,
+                  N_subset=num_subset,
+                  N_logits_matching_rounds=num_logits_matching_rounds,
                   logits_matching_batch_size=logits_matching_batch_size,
-                  num_private_training_rounds=num_private_training_rounds,
+                  N_private_training_rounds=num_private_training_rounds,
                   private_training_batch_size=private_training_batch_size,
                   restore_path=restore_path)
 
